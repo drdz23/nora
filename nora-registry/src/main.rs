@@ -1171,6 +1171,7 @@ fn load_registry_overrides(
         (RegistryType::Nuget, &curation_config.nuget),
         (RegistryType::PubDart, &curation_config.pub_dart),
         (RegistryType::Conan, &curation_config.conan),
+        (RegistryType::Lean, &curation_config.lean),
     ];
 
     for (registry, override_cfg) in registry_overrides {
@@ -1654,6 +1655,9 @@ async fn run_server(mut config: Config, storage: Storage) {
             RegistryType::Rpm => registry_routes = registry_routes.merge(registry::rpm_routes()),
             RegistryType::Deb => registry_routes = registry_routes.merge(registry::deb_routes()),
             RegistryType::Cpan => registry_routes = registry_routes.merge(registry::cpan_routes()),
+            RegistryType::Lean => {
+                registry_routes = registry_routes.merge(registry::lean_routes())
+            }
         }
     }
 

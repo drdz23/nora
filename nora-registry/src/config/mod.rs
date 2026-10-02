@@ -180,6 +180,8 @@ pub struct Config {
     #[serde(default)]
     pub cpan: CpanConfig,
     #[serde(default)]
+    pub lean: LeanConfig,
+    #[serde(default)]
     pub auth: AuthConfig,
     #[serde(default)]
     pub rate_limit: RateLimitConfig,
@@ -289,6 +291,7 @@ impl Config {
                 RegistryType::Rpm => self.rpm.enabled = on,
                 RegistryType::Deb => self.deb.enabled = on,
                 RegistryType::Cpan => self.cpan.enabled = on,
+                RegistryType::Lean => self.lean.enabled = on,
             }
         }
     }
@@ -344,6 +347,9 @@ impl Config {
         if self.cpan.enabled {
             set.insert(RegistryType::Cpan);
         }
+        if self.lean.enabled {
+            set.insert(RegistryType::Lean);
+        }
         if set.is_empty() {
             tracing::warn!("No registries enabled! All registries are disabled.");
         }
@@ -377,6 +383,7 @@ impl Config {
             RegistryType::Rpm => self.rpm.enabled && !self.rpm.proxies.is_empty(),
             RegistryType::Deb => self.deb.enabled && !self.deb.proxies.is_empty(),
             RegistryType::Cpan => self.cpan.enabled && self.cpan.proxy.is_some(),
+            RegistryType::Lean => self.lean.enabled && self.lean.toolchain_proxy.is_some(),
         }
     }
 
@@ -413,6 +420,7 @@ impl Config {
             // its handlers (quarantine gates proxy downloads).
             RegistryType::Raw => return QuarantineMode::Off,
             RegistryType::Cpan => self.curation.cpan.quarantine.as_ref(),
+            RegistryType::Lean => self.curation.lean.quarantine.as_ref(),
         };
         per.or(global).cloned().unwrap_or(QuarantineMode::Off)
     }
@@ -571,6 +579,7 @@ impl Config {
             ("pub", self.pub_dart.proxy.as_deref()),
             ("conan", self.conan.proxy.as_deref()),
             ("cpan", self.cpan.proxy.as_deref()),
+            ("lean", self.lean.toolchain_proxy.as_deref()),
         ];
         for (name, url) in simple {
             if let Some(url) = url {
@@ -1103,6 +1112,7 @@ impl Config {
         self.rpm.apply_env_overrides();
         self.deb.apply_env_overrides();
         self.cpan.apply_env_overrides();
+        self.lean.apply_env_overrides();
 
         // Rate limit, GC, retention
         self.rate_limit.apply_env_overrides();
@@ -1728,6 +1738,7 @@ mod tests {
         assert_serde_default_eq_default::<RpmConfig>("rpm");
         assert_serde_default_eq_default::<DebConfig>("deb");
         assert_serde_default_eq_default::<CpanConfig>("cpan");
+        assert_serde_default_eq_default::<LeanConfig>("lean");
         assert_serde_default_eq_default::<SigningConfig>("signing");
 
         // Whole-Config fallback agrees with deserializing an empty file.
@@ -2707,6 +2718,7 @@ mod tests {
             &mut config.curation.rpm,
             &mut config.curation.deb,
             &mut config.curation.cpan,
+            &mut config.curation.lean,
         ] {
             o.quarantine = Some(QuarantineMode::Off);
         }
