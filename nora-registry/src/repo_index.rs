@@ -204,6 +204,10 @@ impl RepoIndex {
                     let (p, s) = crate::registry::cpan::INDEX_PATTERN;
                     build_generic_index(storage, p, s).await
                 }
+                RegistryType::Lean => {
+                    let (p, s) = crate::registry::lean::INDEX_PATTERN;
+                    build_generic_index(storage, p, s).await
+                }
             };
             match data {
                 Some(data) => {

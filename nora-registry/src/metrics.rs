@@ -820,6 +820,15 @@ mod tests {
     }
 
     #[test]
+    fn test_detect_registry_lean() {
+        assert_eq!(
+            detect_registry("/lean/toolchains/v4.28.0/lean-4.28.0-linux.tar.zst"),
+            "lean"
+        );
+        assert_eq!(detect_registry("/lean/cache/abcd1234.ltar"), "lean");
+    }
+
+    #[test]
     fn test_detect_registry_other() {
         assert_eq!(detect_registry("/health"), "other");
         assert_eq!(detect_registry("/ready"), "other");
@@ -990,6 +999,8 @@ mod tests {
             "/conan/v2/conans/zlib",
             "/rpm/myrepo/repodata/repomd.xml",
             "/deb/myrepo/Packages",
+            "/lean/toolchains/v4.28.0/lean-4.28.0-linux.tar.zst",
+            "/lean/cache/abcd1234.ltar",
         ] {
             assert!(
                 !is_own_surface(p),

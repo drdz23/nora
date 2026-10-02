@@ -22,7 +22,7 @@ use crate::AppState;
     info(
         title = "Nora",
         version = "1.3.2",
-        description = "Multi-protocol package registry supporting Docker, Maven, npm, Cargo, PyPI, Go, Raw, RubyGems, Terraform, Ansible, NuGet, pub.dev, Conan, RPM, Debian, and CPAN",
+        description = "Multi-protocol package registry supporting Docker, Maven, npm, Cargo, PyPI, Go, Raw, RubyGems, Terraform, Ansible, NuGet, pub.dev, Conan, RPM, Debian, CPAN, and Lean",
         license(name = "MIT"),
         contact(name = "The NORA Authors", url = "https://getnora.dev")
     ),
@@ -49,6 +49,7 @@ use crate::AppState;
         (name = "rpm", description = "RPM (yum/dnf) Hosted & Pull-Through Repository API"),
         (name = "deb", description = "Debian (APT) Hosted & Pull-Through Repository API"),
         (name = "cpan", description = "CPAN (Perl Archive) Proxy API"),
+        (name = "lean", description = "Lean Toolchain Proxy (elan) + Lake Build Cache API"),
         (name = "auth", description = "Authentication & API Tokens")
     ),
     paths(
@@ -132,6 +133,10 @@ use crate::AppState;
         // CPAN
         crate::openapi::cpan_index,
         crate::openapi::cpan_download,
+        // Lean (toolchain proxy + Lake cache)
+        crate::openapi::lean_toolchain_download,
+        crate::openapi::lean_cache_get,
+        crate::openapi::lean_cache_put,
         // Tokens
         crate::openapi::create_token,
         crate::openapi::list_tokens,
@@ -1285,6 +1290,60 @@ pub async fn cpan_index() {}
     ),
 )]
 pub async fn cpan_download() {}
+
+// -------------------- Lean (toolchain proxy + Lake cache) --------------------
+
+/// Download a Lean toolchain archive (elan-compatible proxy, cached on first fetch)
+#[utoipa::path(
+    get,
+    path = "/lean/toolchains/{version}/{filename}",
+    tag = "lean",
+    params(
+        ("version" = String, Path, description = "Toolchain version, e.g. v4.28.0"),
+        ("filename" = String, Path, description = "Release archive file name"),
+    ),
+    responses(
+        (status = 200, description = "Toolchain archive", content_type = "application/octet-stream"),
+        (status = 400, description = "Invalid input", body = ErrorResponse),
+        (status = 404, description = "Not found"),
+        (status = 429, description = "Rate limit exceeded. Retry-After header indicates wait time")
+    ),
+)]
+pub async fn lean_toolchain_download() {}
+
+/// Download a cached Lake build-cache artifact (`LAKE_CACHE_ARTIFACT_ENDPOINT`)
+#[utoipa::path(
+    get,
+    path = "/lean/cache/{hash}",
+    tag = "lean",
+    params(
+        ("hash" = String, Path, description = "Content hash of the cached artifact, optionally suffixed .ltar"),
+    ),
+    responses(
+        (status = 200, description = "Cached artifact", content_type = "application/octet-stream"),
+        (status = 400, description = "Invalid input", body = ErrorResponse),
+        (status = 404, description = "Not found"),
+    ),
+)]
+pub async fn lean_cache_get() {}
+
+/// Publish a Lake build-cache artifact (`lake cache put`)
+#[utoipa::path(
+    put,
+    path = "/lean/cache/{hash}",
+    tag = "lean",
+    params(
+        ("hash" = String, Path, description = "Content hash of the artifact being published, optionally suffixed .ltar"),
+    ),
+    responses(
+        (status = 201, description = "Artifact stored"),
+        (status = 200, description = "Artifact already cached (idempotent)"),
+        (status = 400, description = "Invalid input", body = ErrorResponse),
+        (status = 403, description = "Outside namespace scope"),
+        (status = 413, description = "Artifact too large"),
+    ),
+)]
+pub async fn lean_cache_put() {}
 
 // -------------------- Auth / Tokens --------------------
 
