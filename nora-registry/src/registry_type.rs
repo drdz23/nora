@@ -66,6 +66,7 @@ registry_types! {
     Rpm       => "rpm",       "/rpm/",       "RPM";
     Deb       => "deb",       "/deb/",       "Debian";
     Cpan      => "cpan",      "/cpan/",      "CPAN";
+    Lean      => "lean",      "/lean/",      "Lean";
 }
 
 impl RegistryType {
@@ -103,6 +104,7 @@ impl RegistryType {
             "rpm" | "yum" | "dnf" => Some(Self::Rpm),
             "deb" | "apt" | "debian" => Some(Self::Deb),
             "cpan" => Some(Self::Cpan),
+            "lean" | "elan" | "lake" => Some(Self::Lean),
             _ => None,
         }
     }
