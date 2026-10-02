@@ -393,6 +393,36 @@ Client:
 cpanm --from http://nora:4000/cpan Module::Name
 ```
 
+## Lean (elan toolchain proxy + Lake build cache)
+
+Two independent pieces behind one mount point: an elan-compatible toolchain
+proxy (caches `leanprover/lean4` release archives on first fetch, immutably,
+same pattern as Conan/Cargo), and a hosted Lake build-cache endpoint
+compatible with `LAKE_CACHE_ARTIFACT_ENDPOINT` (Lake 5.0, ships with Lean
+4.28) for prebuilt `.olean`/`.ilean` artifacts, keyed by content hash.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Toolchain archive download (`/lean/toolchains/{version}/{filename}`) | Full | Proxy + immutable cache from `github.com/leanprover/lean4/releases` |
+| Lake cache `GET` (`/lean/cache/{hash}`) | Full | Hosted, content-addressed; `.ltar` suffix optional |
+| Lake cache `PUT` (`/lean/cache/{hash}`) | Full | Hosted; re-PUT of an existing hash is an idempotent no-op (`lake cache put` retries) |
+
+> **Note:** `LAKE_CACHE_ARTIFACT_ENDPOINT` is a real Lake 5.0 feature without a
+> published versioned wire-format spec at the time of writing. NORA follows
+> the same content-addressed GET/PUT-by-hash convention Cargo/Conan use for
+> immutable revision-scoped files. If Lake's actual contract differs, only
+> the route pattern and hash validation in `registry/lean.rs` need updating.
+
+Client:
+```bash
+# elan toolchain proxy — point elan's toolchain download origin at NORA,
+# then install as usual:
+elan toolchain install leanprover/lean4:v4.28.0
+
+# Lake build cache:
+LAKE_CACHE_ARTIFACT_ENDPOINT=http://nora:4000/lean/cache lake cache get
+```
+
 ## Helm OCI
 
 Helm charts are stored as OCI artifacts via the Docker registry endpoints. `helm push` and `helm pull` work through the standard `/v2/` API.

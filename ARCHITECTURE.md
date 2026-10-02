@@ -4,7 +4,7 @@ This document describes the high-level architecture of NORA, a multi-protocol
 artifact registry. It is intended for contributors who want to understand the
 codebase and for operators evaluating NORA for production use.
 
-NORA is a single Rust binary (~42k lines of production code) that implements up to 16
+NORA is a single Rust binary (~42k lines of production code) that implements up to 17
 registry protocols over one HTTP port. It is a registry — it provides
 protocol-compliant interfaces for package managers (docker, npm, cargo,
 pip, etc.), not a storage system. There is no database, no JVM, no
@@ -55,7 +55,7 @@ plugin runtime. The filesystem (or S3) is the only source of truth.
           │                           │                           │
    ┌──────▼──────┐           ┌───────▼───────┐          ┌───────▼───────┐
    │   Docker    │           │     Maven     │   ...    │    Debian     │
-   │  /v2/*      │           │  /maven2/*    │  (x16)   │    /deb/*     │
+   │  /v2/*      │           │  /maven2/*    │  (x17)   │    /deb/*     │
    └──────┬──────┘           └───────┬───────┘          └───────┬───────┘
           │                           │                           │
           └───────────────────────────┼───────────────────────────┘
@@ -157,6 +157,7 @@ nora/
 │   │   ├── cpan.rs          #   CPAN (Perl Archive)
 │   │   ├── rpm.rs           #   RPM hosted repos (server-generated repodata)
 │   │   ├── deb.rs           #   Debian/APT flat repos (server-generated indexes)
+│   │   ├── lean.rs          #   Lean toolchain proxy (elan) + Lake build cache
 │   │   └── mod.rs           #   Re-exports: docker_routes(), maven_routes(), ...
 │   │
 │   ├── storage/
@@ -238,7 +239,7 @@ is available to handlers.
 
 ### ADR-1: Single Binary
 
-**Decision:** NORA ships as one statically-linked binary. All 16 registry
+**Decision:** NORA ships as one statically-linked binary. All 17 registry
 handlers, the UI, the curation engine, and the CLI tools are compiled into
 a single executable.
 

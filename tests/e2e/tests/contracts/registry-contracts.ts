@@ -420,6 +420,30 @@ export const REGISTRIES: RegistryContract[] = [
       hasClickableVersionRows: false,
     },
   },
+  {
+    slug: 'lean',
+    displayName: 'Lean (toolchains + Lake cache)',
+    sidebarName: 'Lean',
+    list: {
+      slug: 'lean',
+      title: 'Lean (toolchains + Lake cache)',
+      columnHeaders: ['Name', 'Versions', 'Size', 'Updated'],
+      countColumnLabel: 'Versions',
+      isHierarchical: false,
+      hasSearch: true,
+      searchEndpoint: '/api/ui/lean/search',
+    },
+    detail: {
+      slug: 'lean',
+      breadcrumbRootText: 'Lean (toolchains + Lake cache)',
+      hasInstallCommand: true,
+      installSectionLabel: 'Install Command',
+      installCommandPattern: /LAKE_CACHE_ARTIFACT_ENDPOINT=.+/,
+      tableColumnHeaders: ['Versions', 'Size', 'Published'],
+      hasMetadataPanel: false,
+      hasClickableVersionRows: false,
+    },
+  },
 ];
 
 // --- Dashboard Contract ---

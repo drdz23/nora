@@ -15,7 +15,7 @@ Open [http://localhost:4000/ui/](http://localhost:4000/ui/) — your registry is
 ## Why NORA
 
 - **Zero-config** — single binary, no database, no dependencies. `docker run` and it works.
-- **16 registries** — Docker, Maven, npm, PyPI, Cargo, Go, Raw, RubyGems, Terraform, Ansible Galaxy, NuGet, Pub (Dart/Flutter), Conan (C/C++), CPAN, RPM (yum/dnf), Debian/APT.
+- **17 registries** — Docker, Maven, npm, PyPI, Cargo, Go, Raw, RubyGems, Terraform, Ansible Galaxy, NuGet, Pub (Dart/Flutter), Conan (C/C++), CPAN, RPM (yum/dnf), Debian/APT, Lean (toolchains + Lake cache).
 - **Secure by default** — [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/getnora-io/nora), signed releases, SBOM, fuzz testing, 1200+ tests.
 
 [![Release](https://img.shields.io/github/v/release/getnora-io/nora)](https://github.com/getnora-io/nora/releases)
@@ -23,7 +23,7 @@ Open [http://localhost:4000/ui/](http://localhost:4000/ui/) — your registry is
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/nora)](https://artifacthub.io/packages/helm/nora/nora)
 [![Docker Pulls](https://img.shields.io/docker/pulls/getnora/nora)](https://hub.docker.com/r/getnora/nora)
 
-**< 30 MB** binary | **< 50 MB** RAM idle | **3s** startup | **16** registries
+**< 30 MB** binary | **< 50 MB** RAM idle | **3s** startup | **17** registries
 
 ## Supported Registries
 
@@ -47,6 +47,7 @@ All endpoints require authentication. Anonymous read is opt-in via `anonymous_re
 | Conan (C/C++) | ⚠️ | ❌ | `center2.conan.io` | proxy only; Conan client compatibility tracked in COMPAT.md |
 | RPM (yum/dnf) | ⚠️ | ✅ | — (none by default) | hosted; pull-through via `config.registries.rpm.proxies` (off by default); auto-generates `repodata/` |
 | Debian/APT | ⚠️ | ✅ | — (none by default) | hosted; pull-through via `config.registries.deb.proxies` (off by default); flat & structured layouts; auto-generates `Packages`/`Release`/`InRelease` |
+| Lean (toolchains + Lake cache) | ✅ | ✅ | `github.com/leanprover/lean4` | elan toolchain proxy (cached on first fetch) + hosted Lake build-cache (`LAKE_CACHE_ARTIFACT_ENDPOINT`) |
 
 > **Helm charts** work via the Docker/OCI endpoint — `helm push`/`pull` with `--plain-http` or behind TLS reverse proxy.
 
@@ -109,6 +110,9 @@ GOPROXY=http://localhost:4000/go go get golang.org/x/text@latest
 
 # CPAN
 cpanm --from http://localhost:4000/cpan Module::Name
+
+# Lean (Lake build cache)
+LAKE_CACHE_ARTIFACT_ENDPOINT=http://localhost:4000/lean/cache lake cache get
 ```
 
 See [full documentation](https://getnora.dev) for all registries.
