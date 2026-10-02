@@ -151,6 +151,8 @@ pub fn routes() -> Router<AppState> {
         .route("/ui/deb/{name}", get(generic_registry_detail))
         .route("/ui/cpan", get(cpan_browse_root))
         .route("/ui/cpan/{*path}", get(cpan_browse))
+        .route("/ui/lean", get(generic_registry_list))
+        .route("/ui/lean/{name}", get(generic_registry_detail))
         .route("/ui/gems/{name}", get(generic_registry_detail))
         .route("/ui/terraform/{name}", get(generic_registry_detail))
         // Token management UI (protected by auth middleware)
@@ -694,6 +696,7 @@ async fn generic_registry_list(
         Some(crate::registry_type::RegistryType::Rpm) => "RPM (yum/dnf)",
         Some(crate::registry_type::RegistryType::Deb) => "Debian (APT)",
         Some(crate::registry_type::RegistryType::Cpan) => "CPAN",
+        Some(crate::registry_type::RegistryType::Lean) => "Lean (toolchains + Lake cache)",
         _ => registry_key,
     };
 

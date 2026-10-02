@@ -38,6 +38,7 @@ pub struct RegistryStats {
     pub rpm: usize,
     pub deb: usize,
     pub cpan: usize,
+    pub lean: usize,
 }
 
 #[derive(Serialize)]
@@ -180,6 +181,7 @@ pub async fn api_stats(State(state): State<AppState>) -> Json<RegistryStats> {
         rpm: get(RegistryType::Rpm),
         deb: get(RegistryType::Deb),
         cpan: get(RegistryType::Cpan),
+        lean: get(RegistryType::Lean),
     })
 }
 
@@ -260,6 +262,13 @@ pub async fn build_dashboard_response(state: &AppState, authenticated: bool) -> 
                 RegistryType::Rpm => vec![],
                 RegistryType::Deb => vec![],
                 RegistryType::Cpan => state.config.cpan.proxy.clone().into_iter().collect(),
+                RegistryType::Lean => state
+                    .config
+                    .lean
+                    .toolchain_proxy
+                    .clone()
+                    .into_iter()
+                    .collect(),
             }
         } else {
             vec![]
@@ -1082,6 +1091,39 @@ pub async fn get_go_detail(
     }
 }
 
+/// Lean toolchain detail: `name` is a toolchain version string (e.g.
+/// `v4.28.0`); each cached archive under it (one per platform) is listed as
+/// its own row — Lean has no sub-version semver within a toolchain the way
+/// Cargo/npm do, so, like Raw's single-file listing, the "version" column
+/// shows the archive filename.
+pub async fn get_lean_detail(storage: &Storage, name: &str) -> PackageDetail {
+    let prefix = format!("lean/toolchains/{}/", name);
+    let files = storage.list_with_meta(&prefix).await.unwrap_or_default();
+    let mut versions: Vec<VersionInfo> = files
+        .into_iter()
+        .filter_map(|(key, meta)| {
+            let filename = key.strip_prefix(&prefix)?;
+            if filename.is_empty() || filename.contains('/') {
+                return None;
+            }
+            Some(VersionInfo {
+                version: filename.to_string(),
+                size: meta.size,
+                published: format_timestamp(meta.modified),
+                cached: true,
+            })
+        })
+        .collect();
+    versions.sort_by(|a, b| a.version.cmp(&b.version));
+    let total_stable = versions.len();
+    PackageDetail {
+        versions,
+        prerelease_count: 0,
+        total_stable,
+        metadata: PackageMetadata::default(),
+    }
+}
+
 /// Generic detail for new-format registries (NuGet, Gems, Terraform, Ansible, Pub, Conan).
 /// Reads version info from storage using registry-specific paths.
 pub async fn get_generic_detail(
@@ -1114,6 +1156,7 @@ pub async fn get_generic_detail(
         Some(RegistryType::Cpan) => {
             get_cpan_detail(storage, &name_lower, show_prerelease, show_all).await
         }
+        Some(RegistryType::Lean) => get_lean_detail(storage, name).await,
         _ => {
             get_storage_scan_detail(storage, registry, &name_lower, show_prerelease, show_all).await
         }
